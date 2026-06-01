@@ -1,81 +1,75 @@
-#include "DHT.h"
+#include <DHT.h>
 
-// --- Analog Pins ---
-#define MQ2_AO_PIN   34
-#define MQ9_AO_PIN   35
-#define RAIN_AO_PIN  32
+#define DHTPIN           4
+#define DHTTYPE          DHT22
 
-// --- Digital Pins ---
-#define MQ2_DO_PIN   25
-#define MQ9_DO_PIN   33
-#define RAIN_DO_PIN  26
+#define RAIN_DIGITAL_PIN 27
+#define RAIN_ANALOG_PIN  33
 
-// --- Other Pins ---
-#define DHT11_PIN    27
-#define BUZZER_PIN   18
+#define MQ2_ANALOG_PIN   34
+#define MQ9_ANALOG_PIN   35
 
-// --- DHT11 Setup ---
-#define DHTTYPE DHT11
-DHT dht(DHT11_PIN, DHTTYPE);
+DHT dht(DHTPIN, DHTTYPE);
+
+int averageRead(int pin) {
+  long total = 0;
+
+  for (int i = 0; i < 20; i++) {
+    total += analogRead(pin);
+    delay(5);
+  }
+
+  return total / 20;
+}
 
 void setup() {
   Serial.begin(115200);
-  
-  // Digital inputs
-  pinMode(MQ2_DO_PIN, INPUT);
-  pinMode(MQ9_DO_PIN, INPUT);
-  pinMode(RAIN_DO_PIN, INPUT);
-  pinMode(BUZZER_PIN, OUTPUT);
-  digitalWrite(BUZZER_PIN, LOW);
-  
+
+  pinMode(RAIN_DIGITAL_PIN, INPUT);
+
+  analogReadResolution(12);
+
   dht.begin();
-  
-  Serial.println("System ready – reading both analog & digital.");
-  delay(2000);
+
+  Serial.println("Sensor Test Started");
 }
 
 void loop() {
-  // ----- 1. MQ-2 (smoke/combustible gas) -----
-  int mq2_analog = analogRead(MQ2_AO_PIN);
-  bool mq2_digital = digitalRead(MQ2_DO_PIN);   // LOW = gas detected (adjust pot)
-  
-  // ----- 2. MQ-9 (CO / methane) -----
-  int mq9_analog = analogRead(MQ9_AO_PIN);
-  bool mq9_digital = digitalRead(MQ9_DO_PIN);
-  
-  // ----- 3. Rain Sensor -----
-  int rain_analog = analogRead(RAIN_AO_PIN);    // lower value = more water
-  bool rain_digital = digitalRead(RAIN_DO_PIN); // LOW = rain detected (adjust pot)
-  
-  // ----- 4. Temperature & Humidity -----
-  float temperature = dht.readTemperature();
-  float humidity = dht.readHumidity();
-  if (isnan(temperature) || isnan(humidity)) {
-    temperature = -1;
-    humidity = -1;
-  }
-  
-  // ----- 5. Alarm logic (example) -----
-  bool alarm = false;
-  if (!mq2_digital || !mq9_digital) {   // if either digital gas sensor triggers
-    alarm = true;
-  }
-  digitalWrite(BUZZER_PIN, alarm ? HIGH : LOW);
-  
-  // ----- 6. Print everything -----
-  Serial.println("====== Sensor Report ======");
-  Serial.print("MQ-2:  Analog="); Serial.print(mq2_analog);
-  Serial.print("   Digital="); Serial.println(mq2_digital ? "SAFE" : "GAS!");
-  
-  Serial.print("MQ-9:  Analog="); Serial.print(mq9_analog);
-  Serial.print("   Digital="); Serial.println(mq9_digital ? "SAFE" : "GAS!");
-  
-  Serial.print("Rain:  Analog="); Serial.print(rain_analog);
-  Serial.print("   Digital="); Serial.println(rain_digital ? "DRY" : "WET!");
-  
-  Serial.print("Temp:  "); Serial.print(temperature); Serial.println(" °C");
-  Serial.print("Humidity: "); Serial.print(humidity); Serial.println(" %");
-  Serial.println("============================");
-  
+
+  float temp = dht.readTemperature();
+  float hum  = dht.readHumidity();
+
+  int mq2  = averageRead(MQ2_ANALOG_PIN);
+  int mq9  = averageRead(MQ9_ANALOG_PIN);
+  int rain = averageRead(RAIN_ANALOG_PIN);
+
+  bool rainDetected = digitalRead(RAIN_DIGITAL_PIN) == LOW;
+
+  Serial.println("--------------------------------");
+
+  Serial.print("Temperature: ");
+  Serial.print(temp);
+  Serial.println(" C");
+
+  Serial.print("Humidity: ");
+  Serial.print(hum);
+  Serial.println(" %");
+
+  Serial.print("MQ2 Value: ");
+  Serial.println(mq2);
+
+  Serial.print("MQ9 Value: ");
+  Serial.println(mq9);
+
+  Serial.print("Rain Analog: ");
+  Serial.println(rain);
+
+  Serial.print("Rain Status: ");
+
+  if (rainDetected)
+    Serial.println("RAIN DETECTED");
+  else
+    Serial.println("NO RAIN");
+
   delay(2000);
 }
