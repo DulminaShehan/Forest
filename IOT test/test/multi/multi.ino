@@ -1,40 +1,68 @@
-#define POWER_PIN 19
-#define AO_PIN 36
+#define MQ2_PIN 34
+#define MQ9_PIN 35
+
+#define RAIN_POWER_PIN 19
+#define RAIN_AO_PIN 36
+
+int readAvg(int pin) {
+  long sum = 0;
+  for (int i = 0; i < 10; i++) {
+    sum += analogRead(pin);
+    delay(5);
+  }
+  return sum / 10;
+}
 
 void setup() {
   Serial.begin(115200);
 
-  pinMode(POWER_PIN, OUTPUT);
-  digitalWrite(POWER_PIN, LOW); // Sensor OFF initially
+  pinMode(RAIN_POWER_PIN, OUTPUT);
+  digitalWrite(RAIN_POWER_PIN, LOW);
 }
 
 void loop() {
-  digitalWrite(POWER_PIN, HIGH); // Turn sensor ON
+
+  // Read MQ2
+  int mq2 = readAvg(MQ2_PIN);
+
+  // Read MQ9
+  int mq9 = readAvg(MQ9_PIN);
+
+  // Read Rain Sensor
+  digitalWrite(RAIN_POWER_PIN, HIGH);
   delay(10);
 
-  int rainValue = analogRead(AO_PIN);
+  int rainValue = analogRead(RAIN_AO_PIN);
 
-  digitalWrite(POWER_PIN, LOW); // Turn sensor OFF
+  digitalWrite(RAIN_POWER_PIN, LOW);
 
   int rainPercent = map(rainValue, 4095, 0, 0, 100);
 
-  Serial.print("Rain Value: ");
-  Serial.print(rainValue);
+  Serial.println("========== Sensor Data ==========");
 
-  Serial.print(" | Rain Percentage: ");
+  Serial.print("MQ2 Value: ");
+  Serial.println(mq2);
+
+  Serial.print("MQ9 Value: ");
+  Serial.println(mq9);
+
+  Serial.print("Rain Value: ");
+  Serial.println(rainValue);
+
+  Serial.print("Rain Percentage: ");
   Serial.print(rainPercent);
   Serial.println("%");
 
   if (rainPercent < 20) {
-    Serial.println("Status: No Rain");
+    Serial.println("Weather: Dry");
   }
   else if (rainPercent < 60) {
-    Serial.println("Status: Light Rain");
+    Serial.println("Weather: Light Rain");
   }
   else {
-    Serial.println("Status: Heavy Rain");
+    Serial.println("Weather: Heavy Rain");
   }
 
-  Serial.println("--------------------");
+  Serial.println("---------------------------------");
   delay(1000);
 }
