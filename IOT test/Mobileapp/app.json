@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Forest IoT Mobile",
+    "slug": "forest-iot-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "useNextNotificationsApi": true
+    }
+  }
+}
