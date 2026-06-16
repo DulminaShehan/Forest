@@ -1,14 +1,47 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Chip, Text } from 'react-native-paper';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, Animated, StyleSheet } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { C, S } from '../theme';
 
 export default function ConnectivityBanner({ connected, connectionType }) {
+  const pulse = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (connected) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulse, { toValue: 0.3, duration: 900, useNativeDriver: true }),
+          Animated.timing(pulse, { toValue: 1,   duration: 900, useNativeDriver: true }),
+        ])
+      ).start();
+    } else {
+      pulse.setValue(1);
+    }
+    return () => pulse.stopAnimation();
+  }, [connected]);
+
+  const dotColor  = connected ? C.primary : C.alert;
+  const typeLabel = connectionType && connectionType !== 'unknown' ? connectionType.toUpperCase() : null;
+
   return (
     <View style={styles.banner}>
-      <Chip style={connected ? styles.online : styles.offline} textStyle={styles.chipText}>
-        {connected ? 'Online' : 'Offline'}
-      </Chip>
-      <Text style={styles.text}>{connected ? `via ${connectionType}` : 'Cached data shown'}</Text>
+      <View style={styles.left}>
+        <Animated.View style={[styles.dot, { backgroundColor: dotColor, opacity: connected ? pulse : 1 }]} />
+        <Text style={[styles.status, { color: dotColor }]}>
+          {connected ? 'Online' : 'Offline'}
+        </Text>
+        {typeLabel && (
+          <View style={styles.typePill}>
+            <Text style={styles.typeText}>{typeLabel}</Text>
+          </View>
+        )}
+      </View>
+      {!connected && (
+        <View style={styles.right}>
+          <MaterialCommunityIcons name="database-clock-outline" size={14} color={C.textMuted} />
+          <Text style={styles.cacheText}>Cached data</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -18,22 +51,47 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: S.md,
     paddingVertical: 10,
-    backgroundColor: '#151515',
+    backgroundColor: C.bgDeep,
     borderBottomWidth: 1,
-    borderBottomColor: '#2d2d2d',
+    borderBottomColor: C.border,
   },
-  online: {
-    backgroundColor: '#1b5e20',
+  left: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
   },
-  offline: {
-    backgroundColor: '#b71c1c',
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  chipText: {
-    color: '#ffffff',
+  status: {
+    fontSize: 13,
+    fontWeight: '600',
   },
-  text: {
-    color: '#c7c7c7',
+  typePill: {
+    backgroundColor: C.surfaceHigh,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  typeText: {
+    fontSize: 10,
+    color: C.textMuted,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  right: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  cacheText: {
+    fontSize: 12,
+    color: C.textMuted,
   },
 });
